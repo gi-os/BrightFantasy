@@ -1,5 +1,6 @@
 package com.gios.brightfantasy.ui
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -174,7 +175,7 @@ private fun Half(
     onClick: () -> Unit,
 ) {
     Column(
-        modifier.let { if (slot != null) it.clickableRow(onClick) else it },
+        modifier.let { if (slot != null) it.clickable(onClick = onClick) else it },
         horizontalAlignment = if (alignEnd) Alignment.End else Alignment.Start,
     ) {
         Text(
@@ -196,9 +197,6 @@ private fun Half(
         )
     }
 }
-
-private fun Modifier.clickableRow(onClick: () -> Unit): Modifier =
-    androidx.compose.foundation.clickable(onClick = onClick)
 
 /**
  * "J. Gibbs" — a full name does not fit in half of a 3.9" screen and truncating it puts
