@@ -1,3 +1,5 @@
+<img src="docs/icon.png" alt="" width="72" align="left" />
+
 # BrightFantasy
 
 ESPN fantasy football on the Light Phone III.
