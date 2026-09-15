@@ -131,3 +131,9 @@ anything Obtainium should treat as a new version.
 
 Icons are from [light-sdk](https://github.com/lightphone/light-sdk) (MIT); see
 `NOTICE-light-sdk.txt`. Not affiliated with ESPN.
+
+## Support
+
+These apps are free, open, and built on my own time. Sponsorship pays the bills that don't go away: build servers, test hardware, and the crash reporter that keeps them shipping. Donation or not my code is always free for the world to use.
+
+[Sponsor on GitHub](https://github.com/sponsors/gi-os)
