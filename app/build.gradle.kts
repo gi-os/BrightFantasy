@@ -43,21 +43,10 @@ android {
         ndk { abiFilters += "arm64-v8a" }
     }
 
-    signingConfigs {
-        getByName("debug") {
-            storeFile = file("../keystore/brightfantasy.jks")
-            storePassword = "brightfantasy"
-            keyAlias = "brightfantasy"
-            keyPassword = "brightfantasy"
-        }
-    }
-
     buildTypes {
         release {
             isMinifyEnabled = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-            // Same committed key as debug, so either APK upgrades over the other.
-            signingConfig = signingConfigs.getByName("debug")
         }
     }
     compileOptions {
