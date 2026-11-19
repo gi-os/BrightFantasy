@@ -169,10 +169,13 @@ they compile and run under a plain `kotlinc` without the Android toolchain.
    Use the new keystore password, `brightfantasy-release`, and the new key password,
    respectively. The old key and old passwords are not CI inputs.
 5. Before re-enabling publication, coordinate the BrightMarket catalog and updater
-   transition for `com.gios.brightfantasy`. BrightMarket compares the installed
-   current signer against one catalog pin, so changing that pin alone can hide the
-   update from old-signer installs; keeping the old pin will misclassify rotated
-   installs. Verify the catalog offers the update to an existing install and still
+   transition for `com.gios.brightfantasy`. Add the exact
+   `(package, original SHA-256, new SHA-256, reason)` tuple to
+   [the index's `HANDOVERS`](https://github.com/gi-os/brightmarket-index/blob/main/scripts/build_index.py);
+   otherwise it keeps the previous release. BrightMarket compares the installed
+   current signer against one catalog pin: ensure the client recognizes the
+   original signer during the transition as well as the new signer after the
+   upgrade. Verify the catalog offers the update to an existing install and still
    recognizes the app after rotation. Coordinate with the separate shake-to-report
    relay change so the next release doesn't bundle a report token. Re-enable the
    workflow only for an authorized release.
