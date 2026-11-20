@@ -112,8 +112,80 @@ the phone with no review step in between.
 ./gradlew :app:assembleRelease
 ```
 
+The local release APK is unsigned. Debug builds use the standard Android debug key
+and do not upgrade an installed release.
+
 The parsers, URL builders and setup payloads are pure Kotlin with no Android imports, so
 they compile and run under a plain `kotlinc` without the Android toolchain.
+
+### Rotate the release signing key
+
+1. Before merging the signing change, [disable Build & Release APK](../../actions/workflows/build.yml)
+   and cancel any in-progress release runs. A push to `main` or a manual run on `main`
+   will publish whenever the workflow is enabled.
+2. On a trusted machine with JDK 17 and Android SDK Build Tools 35.0.0, use the old key
+   **offline only** to create the lineage. From the repository, with the pre-rotation
+   `origin/main` checked by `git fetch origin main` before going offline, run:
+
+   ```sh
+   export PATH="$ANDROID_HOME/build-tools/35.0.0:$PATH"
+   umask 077
+   rotation_dir=$(mktemp -d)
+   git show origin/main:keystore/brightfantasy.jks > "$rotation_dir/brightfantasy.jks"
+   cd "$rotation_dir"
+
+   keytool -genkeypair -storetype JKS -keystore brightfantasy-new.jks \
+     -alias brightfantasy-release -keyalg RSA -keysize 3072 -validity 10000 \
+     -dname 'CN=BrightFantasy Release'
+
+   apksigner rotate --out brightfantasy.lineage \
+     --old-signer --ks brightfantasy.jks --ks-key-alias brightfantasy \
+     --set-installed-data true --set-rollback false \
+     --new-signer --ks brightfantasy-new.jks --ks-key-alias brightfantasy-release
+
+   apksigner lineage --in brightfantasy.lineage --print-certs
+   ```
+
+   Choose strong new passwords at the `keytool` prompts. During rotation, enter the
+   old passwords from the pre-rotation Gradle file when prompted for the old key
+   and the new passwords when prompted for the new key. Back up the
+   new keystore and lineage securely outside Git. The exposed old key remains in
+   Git history and must never be uploaded to CI or used to sign a new release.
+3. Check that signer #1's SHA-256 digest matches `signing-lineage-root-fingerprint.txt`.
+   Put signer #2's SHA-256 digest in `signing-fingerprint.txt` on the signing PR;
+   do not change the original pin. Until then, CI refuses to publish.
+4. With the release workflow still disabled, create a `release` environment in
+   [BrightFantasy's environment settings](https://github.com/gi-os/BrightFantasy/settings/environments).
+   Under **Deployment branches and tags**, choose **Selected branches and tags**
+   and add a single **Branch** rule for `main`, with no tag rules. Store all five
+   secrets only in that environment, never as repository-wide or organization
+   secrets. From the rotation directory on Linux, stream the files and enter the
+   new passwords at the prompts:
+
+   ```sh
+   base64 -w 0 brightfantasy-new.jks | gh secret set RELEASE_KEYSTORE_BASE64 --env release --repo gi-os/BrightFantasy
+   base64 -w 0 brightfantasy.lineage | gh secret set SIGNING_LINEAGE_BASE64 --env release --repo gi-os/BrightFantasy
+   gh secret set KEYSTORE_PASSWORD --env release --repo gi-os/BrightFantasy
+   gh secret set KEY_ALIAS --env release --repo gi-os/BrightFantasy --body brightfantasy-release
+   gh secret set KEY_PASSWORD --env release --repo gi-os/BrightFantasy
+   ```
+
+   The old key and old passwords are not CI inputs.
+5. Before re-enabling publication, coordinate the BrightMarket catalog and updater
+   transition for `com.gios.brightfantasy`. Add the exact
+   `(package, original SHA-256, new SHA-256, reason)` tuple to
+   [the index's `HANDOVERS`](https://github.com/gi-os/brightmarket-index/blob/main/scripts/build_index.py);
+   otherwise it keeps the previous release. BrightMarket compares the installed
+   current signer against one catalog pin: ensure the client recognizes the
+   original signer during the transition as well as the new signer after the
+   upgrade. Verify the catalog offers the update to an existing install and still
+   recognizes the app after rotation. Coordinate with the separate shake-to-report
+   relay change so the next release doesn't bundle a report token. Re-enable the
+   workflow only for an authorized release.
+
+CI signs with APK Signature Scheme v3 and verifies both certificate pins and the
+lineage. BrightFantasy requires API 29, so supported devices do not need v1/v2
+signatures or the old private key to accept an in-place update.
 
 ## Versioning
 
