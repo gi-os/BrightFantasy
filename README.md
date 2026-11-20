@@ -154,20 +154,23 @@ they compile and run under a plain `kotlinc` without the Android toolchain.
 3. Check that signer #1's SHA-256 digest matches `signing-lineage-root-fingerprint.txt`.
    Put signer #2's SHA-256 digest in `signing-fingerprint.txt` on the signing PR;
    do not change the original pin. Until then, CI refuses to publish.
-4. With the release workflow still disabled, add the **new** signing material to
-   [GitHub Actions secrets](../../settings/secrets/actions). From the rotation
-   directory on Linux, upload the files and enter the remaining values at the prompts:
+4. With the release workflow still disabled, create a `release` environment in
+   [BrightFantasy's environment settings](https://github.com/gi-os/BrightFantasy/settings/environments).
+   Under **Deployment branches and tags**, choose **Selected branches and tags**
+   and add a single **Branch** rule for `main`, with no tag rules. Store all five
+   secrets only in that environment, never as repository-wide or organization
+   secrets. From the rotation directory on Linux, stream the files and enter the
+   new passwords at the prompts:
 
    ```sh
-   base64 -w 0 brightfantasy-new.jks | gh secret set RELEASE_KEYSTORE_BASE64 --repo gi-os/BrightFantasy
-   base64 -w 0 brightfantasy.lineage | gh secret set SIGNING_LINEAGE_BASE64 --repo gi-os/BrightFantasy
-   gh secret set KEYSTORE_PASSWORD --repo gi-os/BrightFantasy
-   gh secret set KEY_ALIAS --repo gi-os/BrightFantasy
-   gh secret set KEY_PASSWORD --repo gi-os/BrightFantasy
+   base64 -w 0 brightfantasy-new.jks | gh secret set RELEASE_KEYSTORE_BASE64 --env release --repo gi-os/BrightFantasy
+   base64 -w 0 brightfantasy.lineage | gh secret set SIGNING_LINEAGE_BASE64 --env release --repo gi-os/BrightFantasy
+   gh secret set KEYSTORE_PASSWORD --env release --repo gi-os/BrightFantasy
+   gh secret set KEY_ALIAS --env release --repo gi-os/BrightFantasy --body brightfantasy-release
+   gh secret set KEY_PASSWORD --env release --repo gi-os/BrightFantasy
    ```
 
-   Use the new keystore password, `brightfantasy-release`, and the new key password,
-   respectively. The old key and old passwords are not CI inputs.
+   The old key and old passwords are not CI inputs.
 5. Before re-enabling publication, coordinate the BrightMarket catalog and updater
    transition for `com.gios.brightfantasy`. Add the exact
    `(package, original SHA-256, new SHA-256, reason)` tuple to
