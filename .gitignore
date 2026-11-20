@@ -5,3 +5,6 @@ build/
 .idea/
 *.iml
 .DS_Store
+*.jks
+*.keystore
+*.lineage
